@@ -86,3 +86,19 @@ export async function POST(req) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
 }
+
+export async function PUT(req) {
+    try {
+        const { id, is_visible } = await req.json();
+        const { data, error } = await supabase
+            .from('projects')
+            .update({ is_visible, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+        return NextResponse.json(data[0]);
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+}

@@ -12,7 +12,8 @@ import {
     BarChart3,
     Github,
     Award,
-    Eye
+    Eye,
+    FileText
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -27,6 +28,8 @@ export default function AdminDashboard() {
         githubStars: 0,
         siteVisits: 0,
     });
+    const [skills, setSkills] = useState([]);
+    const [experiences, setExperiences] = useState([]);
     const [projects, setProjects] = useState([]);
 
     useEffect(() => {
@@ -42,7 +45,78 @@ export default function AdminDashboard() {
         if (activeTab === "section-visibility") {
             fetchSectionVisibility();
         }
+        if (activeTab === "content-management") {
+            fetchContentData();
+        }
     }, [status, router, activeTab]);
+
+    const fetchContentData = async () => {
+        try {
+            const [skillsRes, experiencesRes, projectsRes] = await Promise.all([
+                fetch("/api/skills?all=true"),
+                fetch("/api/experiences?all=true"),
+                fetch("/api/projects")
+            ]);
+            const skillsData = await skillsRes.json();
+            const experiencesData = await experiencesRes.json();
+            const projectsData = await projectsRes.json();
+
+            setSkills(skillsData);
+            setExperiences(experiencesData);
+            setProjects(projectsData);
+        } catch (error) {
+            console.error("Error fetching content data:", error);
+        }
+    };
+
+    const fetchProjects = async () => {
+        try {
+            const res = await fetch("/api/projects");
+            const data = await res.json();
+            setProjects(data);
+        } catch (error) {
+            console.error("Error fetching projects:", error);
+        }
+    };
+
+    const toggleSkillVisibility = async (id, currentVisibility) => {
+        try {
+            await fetch("/api/skills", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, is_visible: !currentVisibility }),
+            });
+            await fetchContentData();
+        } catch (error) {
+            console.error("Error updating skill visibility:", error);
+        }
+    };
+
+    const toggleExperienceVisibility = async (id, currentVisibility) => {
+        try {
+            await fetch("/api/experiences", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, is_visible: !currentVisibility }),
+            });
+            await fetchContentData();
+        } catch (error) {
+            console.error("Error updating experience visibility:", error);
+        }
+    };
+
+    const toggleProjectVisibility = async (id, currentVisibility) => {
+        try {
+            await fetch("/api/projects", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, is_visible: !currentVisibility }),
+            });
+            await fetchContentData();
+        } catch (error) {
+            console.error("Error updating project visibility:", error);
+        }
+    };
 
     const fetchStats = async () => {
         try {
@@ -132,6 +206,7 @@ export default function AdminDashboard() {
         { id: "messages", label: "Messages", icon: MessageSquare },
         { id: "certifications", label: "Certifications", icon: Award },
         { id: "section-visibility", label: "Section Visibility", icon: Eye },
+        { id: "content-management", label: "Content Management", icon: FileText },
         { id: "analytics", label: "Analytics", icon: BarChart3 },
     ];
 
@@ -271,6 +346,83 @@ export default function AdminDashboard() {
                                     </button>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Content Management Content */}
+                {activeTab === "content-management" && (
+                    <div className="space-y-10">
+                        {/* Skills Management */}
+                        <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100">
+                            <h3 className="text-xl font-bold text-neutral-text mb-6">Skills Management</h3>
+                            <p className="text-neutral-text/40 mb-8">
+                                Control which skills are visible on your portfolio.
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {skills.map((skill) => (
+                                    <div key={skill.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                                        <div>
+                                            <h4 className="font-bold text-neutral-text">{skill.name}</h4>
+                                            <p className="text-sm text-neutral-text/40">{skill.category}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleSkillVisibility(skill.id, skill.is_visible)}
+                                            className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none ${skill.is_visible ? "bg-primary" : "bg-slate-200"}`}
+                                        >
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${skill.is_visible ? "translate-x-6" : "translate-x-1"}`} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Experiences Management */}
+                        <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100">
+                            <h3 className="text-xl font-bold text-neutral-text mb-6">Experience Management</h3>
+                            <p className="text-neutral-text/40 mb-8">
+                                Control which experiences are visible on your portfolio.
+                            </p>
+                            <div className="space-y-4">
+                                {experiences.map((exp) => (
+                                    <div key={exp.id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl">
+                                        <div>
+                                            <h4 className="font-bold text-neutral-text">{exp.role}</h4>
+                                            <p className="text-sm text-neutral-text/40">{exp.company} • {exp.period}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleExperienceVisibility(exp.id, exp.is_visible)}
+                                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${exp.is_visible ? "bg-primary" : "bg-slate-200"}`}
+                                        >
+                                            <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${exp.is_visible ? "translate-x-7" : "translate-x-1"}`} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Projects Visibility Management */}
+                        <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100">
+                            <h3 className="text-xl font-bold text-neutral-text mb-6">Projects Visibility</h3>
+                            <p className="text-neutral-text/40 mb-8">
+                                Control which projects are visible on your portfolio.
+                            </p>
+                            <div className="space-y-4">
+                                {projects.map((project) => (
+                                    <div key={project.id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl">
+                                        <div>
+                                            <h4 className="font-bold text-neutral-text">{project.name}</h4>
+                                            <p className="text-sm text-neutral-text/40">{project.category}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => toggleProjectVisibility(project.id, project.is_visible)}
+                                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${project.is_visible ? "bg-primary" : "bg-slate-200"}`}
+                                        >
+                                            <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${project.is_visible ? "translate-x-7" : "translate-x-1"}`} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}

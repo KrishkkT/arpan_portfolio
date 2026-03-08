@@ -1,9 +1,42 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Calendar, Building, MapPin } from "lucide-react";
 
-const experiences = [
+const Experience = () => {
+    const [experiences, setExperiences] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch("/api/experiences")
+            .then((res) => res.json())
+            .then((data) => {
+                setExperiences(data);
+                setLoading(false);
+            })
+            .catch((error) => {
+                console.error("Error fetching experiences:", error);
+                setLoading(false);
+            });
+    }, []);
+
+    if (loading) {
+        return (
+            <section id="experience" className="py-16 sm:py-20 md:py-24 bg-background-soft">
+                <div className="section-container px-4 sm:px-6">
+                    <div className="flex justify-center">
+                        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    if (experiences.length === 0) {
+        return null;
+    }
+
+const experiences_old = [
     {
         role: "Embedded Systems Intern",
         company: "Tech Electronics Solutions",

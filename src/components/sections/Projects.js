@@ -93,7 +93,8 @@ const Projects = () => {
         const fetchProjects = async () => {
             try {
                 const res = await axios.get("/api/projects");
-                setProjects(res.data);
+                const visibleProjects = res.data.filter(project => project.is_visible !== false);
+                setProjects(visibleProjects);
             } catch (error) {
                 console.error("Error fetching projects:", error);
             } finally {

@@ -12,7 +12,13 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 
 export default function Home() {
-  const [sectionVisibility, setSectionVisibility] = useState({});
+  const [sectionVisibility, setSectionVisibility] = useState({
+    about: true,
+    skills: true,
+    projects: true,
+    experience: true,
+    contact: true,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,11 +32,13 @@ export default function Home() {
     fetch("/api/section-visibility")
       .then((res) => res.json())
       .then((data) => {
-        const visibilityMap = {};
-        data.forEach((item) => {
-          visibilityMap[item.section_name] = item.is_visible;
-        });
-        setSectionVisibility(visibilityMap);
+        if (data && data.length > 0) {
+          const visibilityMap = {};
+          data.forEach((item) => {
+            visibilityMap[item.section_name] = item.is_visible;
+          });
+          setSectionVisibility(visibilityMap);
+        }
         setLoading(false);
       })
       .catch((error) => {

@@ -1,50 +1,52 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Cpu, Code2, PenTool, Globe } from "lucide-react";
 
-const skillCategories = [
-    {
-        title: "Electronics",
-        icon: Cpu,
-        skills: [
-            { name: "Circuit Design", level: 90 },
-            { name: "PCB Design", level: 85 },
-            { name: "Digital Signal Processing", level: 80 },
-            { name: "Microcontrollers (STM32, ESP32)", level: 95 },
-        ],
-    },
-    {
-        title: "Programming",
-        icon: Code2,
-        skills: [
-            { name: "Embedded C", level: 95 },
-            { name: "C++", level: 85 },
-            { name: "Python", level: 90 },
-            { name: "JavaScript / React", level: 75 },
-        ],
-    },
-    {
-        title: "Engineering Tools",
-        icon: PenTool,
-        skills: [
-            { name: "MATLAB / Simulink", level: 90 },
-            { name: "Arduino IDE", level: 95 },
-            { name: "Proteus / Multisim", level: 85 },
-            { name: "KiCad / Altium", level: 80 },
-        ],
-    },
-    {
-        title: "Technologies",
-        icon: Globe,
-        skills: [
-            { name: "Internet of Things (IoT)", level: 90 },
-            { name: "RTOS", level: 80 },
-            { name: "Network Protocols", level: 85 },
-            { name: "Embedded Linux", level: 75 },
-        ],
-    },
-];
+const categoryIcons = {
+    "Electronics": Cpu,
+    "Programming": Code2,
+    "Engineering Tools": PenTool,
+    "Technologies": Globe,
+};
+
+const Skills = () => {
+    const [skillCategories, setSkillCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch("/api/skills")
+            .then((res) => res.json())
+            .then((data) => {
+                const categories = Object.keys(data).map((category) => ({
+                    title: category,
+                    icon: categoryIcons[category] || Globe,
+                    skills: data[category],
+                }));
+                setSkillCategories(categories);
+                setLoading(false);
+            })
+            .catch((error) => {
+                console.error("Error fetching skills:", error);
+                setLoading(false);
+            });
+    }, []);
+
+    if (loading) {
+        return (
+            <section id="skills" className="py-16 sm:py-20 md:py-24 bg-background-soft">
+                <div className="section-container px-4 sm:px-6">
+                    <div className="flex justify-center">
+                        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    if (skillCategories.length === 0) {
+        return null;
+    }
 
 const SkillBar = ({ name, level }) => (
     <div className="mb-3 sm:mb-4">
