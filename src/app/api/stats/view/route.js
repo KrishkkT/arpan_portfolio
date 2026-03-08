@@ -7,14 +7,13 @@ export async function GET() {
             return NextResponse.json({ total_visits: 0 });
         }
 
-        // Fetch the first (and only) row
         const { data, error } = await supabaseAdmin
             .from('site_visits')
             .select('total_visits')
             .limit(1)
             .single();
 
-        if (error && error.code !== 'PGRST116') throw error; // PGRST116 is no rows returned
+        if (error && error.code !== 'PGRST116') throw error;
 
         return NextResponse.json({ total_visits: data?.total_visits || 0 });
     } catch (error) {
@@ -29,7 +28,6 @@ export async function POST(req) {
             return NextResponse.json({ success: false, error: "Supabase Admin not configured" }, { status: 503 });
         }
 
-        // First, check if a row exists
         let { data, error } = await supabaseAdmin
             .from('site_visits')
             .select('id, total_visits')
@@ -37,7 +35,6 @@ export async function POST(req) {
             .single();
 
         if (error && error.code === 'PGRST116') {
-            // No rows exist, create one with total_visits = 1
             const { data: newData, error: insertError } = await supabaseAdmin
                 .from('site_visits')
                 .insert([{ total_visits: 1 }])
@@ -50,7 +47,6 @@ export async function POST(req) {
             throw error;
         }
 
-        // Row exists, increment it
         const newTotal = (data.total_visits || 0) + 1;
 
         const { error: updateError } = await supabaseAdmin

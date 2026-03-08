@@ -168,7 +168,7 @@ export default function AdminDashboard() {
                 ? projectsData.reduce((sum, project) => sum + (project.stars || 0), 0)
                 : 0;
 
-            const siteVisitsRes = await fetch("/api/analytics/visit");
+            const siteVisitsRes = await fetch("/api/stats/view");
             const siteVisitsData = await siteVisitsRes.json();
             const siteVisits = siteVisitsData.total_visits || 0;
 

@@ -28,7 +28,7 @@ export default function Home() {
     // Fire analytics visit once per page load
     const recordVisit = async () => {
       try {
-        await fetch("/api/analytics/visit", { method: "POST" });
+        await fetch("/api/stats/view", { method: "POST" });
       } catch (e) {
         console.error("Failed to record visit", e);
       }
