@@ -11,19 +11,112 @@ import {
     Plus,
     BarChart3,
     Github,
-    Award
+    Award,
+    Eye
 } from "lucide-react";
 
 export default function AdminDashboard() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState("overview");
+    const [sectionVisibility, setSectionVisibility] = useState([]);
+    const [loadingVisibility, setLoadingVisibility] = useState(false);
+    const [stats, setStats] = useState({
+        projects: 0,
+        messages: 0,
+        githubStars: 0,
+        siteVisits: 0,
+    });
+    const [projects, setProjects] = useState([]);
 
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/admin/login");
         }
-    }, [status, router]);
+        if (activeTab === "overview") {
+            fetchStats();
+        }
+        if (activeTab === "projects") {
+            fetchProjects();
+        }
+        if (activeTab === "section-visibility") {
+            fetchSectionVisibility();
+        }
+    }, [status, router, activeTab]);
+
+    const fetchStats = async () => {
+        try {
+            // Fetch projects count
+            const projectsRes = await fetch("/api/projects");
+            const projectsData = await projectsRes.json();
+            const projectsCount = Array.isArray(projectsData) ? projectsData.length : 0;
+
+            // Fetch messages count
+            const messagesRes = await fetch("/api/contact");
+            const messagesData = await messagesRes.json();
+            const messagesCount = Array.isArray(messagesData) ? messagesData.length : 0;
+
+            // For GitHub stars, we can sum from projects
+            const githubStars = Array.isArray(projectsData)
+                ? projectsData.reduce((sum, project) => sum + (project.stars || 0), 0)
+                : 0;
+
+            // Site visits - for now, mock or we can add analytics later
+            const siteVisits = 1284; // Mock for now
+
+            setStats({
+                projects: projectsCount,
+                messages: messagesCount,
+                githubStars,
+                siteVisits,
+            });
+        } catch (error) {
+            console.error("Error fetching stats:", error);
+        }
+    };
+
+    const fetchProjects = async () => {
+        try {
+            const response = await fetch("/api/projects");
+            const data = await response.json();
+            setProjects(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error("Error fetching projects:", error);
+        }
+    };
+
+    const fetchSectionVisibility = async () => {
+        try {
+            const response = await fetch("/api/section-visibility");
+            const data = await response.json();
+            setSectionVisibility(data);
+        } catch (error) {
+            console.error("Error fetching section visibility:", error);
+        }
+    };
+
+    const toggleSectionVisibility = async (sectionName, currentVisibility) => {
+        setLoadingVisibility(true);
+        try {
+            const response = await fetch("/api/section-visibility", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    section_name: sectionName,
+                    is_visible: !currentVisibility,
+                }),
+            });
+            if (response.ok) {
+                await fetchSectionVisibility(); // Refresh the data
+            }
+        } catch (error) {
+            console.error("Error updating section visibility:", error);
+        } finally {
+            setLoadingVisibility(false);
+        }
+    };
 
     if (status === "loading") {
         return (
@@ -38,6 +131,7 @@ export default function AdminDashboard() {
         { id: "projects", label: "Manage Projects", icon: Briefcase },
         { id: "messages", label: "Messages", icon: MessageSquare },
         { id: "certifications", label: "Certifications", icon: Award },
+        { id: "section-visibility", label: "Section Visibility", icon: Eye },
         { id: "analytics", label: "Analytics", icon: BarChart3 },
     ];
 
@@ -99,10 +193,10 @@ export default function AdminDashboard() {
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                             {[
-                                { label: "Site Visits", value: "1,284", change: "+12%" },
-                                { label: "Project Clicks", value: "456", change: "+5%" },
-                                { label: "New Messages", value: "12", change: "+2" },
-                                { label: "GitHub Stars", value: "84", change: "+4" },
+                                { label: "Site Visits", value: stats.siteVisits.toLocaleString(), change: "+12%" },
+                                { label: "Project Clicks", value: stats.projects.toString(), change: "+5%" },
+                                { label: "New Messages", value: stats.messages.toString(), change: "+2" },
+                                { label: "GitHub Stars", value: stats.githubStars.toString(), change: "+4" },
                             ].map((stat, i) => (
                                 <div key={i} className="bg-white p-8 rounded-[30px] shadow-sm border border-slate-100">
                                     <p className="text-sm font-bold text-neutral-text/40 uppercase tracking-widest mb-2">{stat.label}</p>
@@ -142,6 +236,85 @@ export default function AdminDashboard() {
                             </div>
                         </div>
                     </>
+                )}
+
+                {/* Section Visibility Content */}
+                {activeTab === "section-visibility" && (
+                    <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100">
+                        <h3 className="text-xl font-bold text-neutral-text mb-6">Section Visibility Management</h3>
+                        <p className="text-neutral-text/40 mb-8">
+                            Control which sections are visible on your portfolio website.
+                        </p>
+                        <div className="space-y-6">
+                            {sectionVisibility.map((section) => (
+                                <div key={section.id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl">
+                                    <div>
+                                        <h4 className="font-bold text-neutral-text capitalize">
+                                            {section.section_name} Section
+                                        </h4>
+                                        <p className="text-sm text-neutral-text/40">
+                                            {section.is_visible ? "Currently visible on website" : "Currently hidden from website"}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => toggleSectionVisibility(section.section_name, section.is_visible)}
+                                        disabled={loadingVisibility}
+                                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                                            section.is_visible ? "bg-primary" : "bg-slate-200"
+                                        }`}
+                                    >
+                                        <span
+                                            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                                                section.is_visible ? "translate-x-7" : "translate-x-1"
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Projects Management Content */}
+                {activeTab === "projects" && (
+                    <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-neutral-text">Project Management</h3>
+                            <button className="btn-primary flex items-center gap-2">
+                                <Plus className="w-5 h-5" /> Add Project
+                            </button>
+                        </div>
+                        <p className="text-neutral-text/40 mb-8">
+                            Manage your portfolio projects and their details.
+                        </p>
+                        <div className="space-y-4">
+                            {projects.map((project) => (
+                                <div key={project.id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl">
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-neutral-text">{project.name}</h4>
+                                        <p className="text-sm text-neutral-text/40 line-clamp-2">{project.description}</p>
+                                        <div className="flex items-center gap-4 mt-2">
+                                            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                                {project.category}
+                                            </span>
+                                            <span className="text-xs text-neutral-text/40">
+                                                ⭐ {project.stars || 0} stars
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button className="btn-outline text-xs">Edit</button>
+                                        <button className="btn-outline text-xs text-red-500 hover:bg-red-50">Delete</button>
+                                    </div>
+                                </div>
+                            ))}
+                            {projects.length === 0 && (
+                                <div className="text-center py-12">
+                                    <p className="text-neutral-text/40">No projects found. Add your first project!</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 )}
 
                 <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 min-h-[400px] flex flex-col items-center justify-center text-center">

@@ -31,3 +31,20 @@ CREATE TABLE profiles (
   name TEXT,
   role TEXT DEFAULT 'admin'
 );
+
+-- Section Visibility Table
+CREATE TABLE section_visibility (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  section_name TEXT NOT NULL UNIQUE,
+  is_visible BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Insert default visibility for sections
+INSERT INTO section_visibility (section_name, is_visible) VALUES
+('about', true),
+('skills', true),
+('projects', true),
+('experience', true),
+('contact', true);
