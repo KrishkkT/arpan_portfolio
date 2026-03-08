@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0B5394;
+  --color-secondary: #2E8B57;
+  --color-background-soft: #F8FAFC;
+  --color-accent-electric: #2563EB;
+  --color-neutral-text: #1F2937;
+  --color-hover-accent: #38BDF8;
+
+  --font-heading: "Poppins", "Inter", sans-serif;
+  --font-body: "Inter", "Source Sans Pro", sans-serif;
+  --font-code: "JetBrains Mono", monospace;
+}
+
+:root {
+  --background: #F8FAFC;
+  --foreground: #1F2937;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+}
+
+.code-block {
+  font-family: var(--font-code);
+}
+
+@layer components {
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20;
+  }
+
+  .glass-card {
+    @apply bg-white border border-slate-100 shadow-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 transition-all duration-300 hover:shadow-xl hover:border-blue-100 backdrop-blur-sm;
+  }
+
+  .btn-primary {
+    @apply bg-primary hover:bg-accent-electric text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-medium text-sm sm:text-base transition-all duration-300 transform hover:-translate-y-1 shadow-lg shadow-blue-500/20 active:scale-95;
+  }
+
+  .btn-outline {
+    @apply border-2 border-primary text-primary hover:bg-primary/5 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-medium text-sm sm:text-base transition-all duration-300 transform hover:-translate-y-1 active:scale-95;
+  }
+
+  .timeline-dot {
+    @apply absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-primary border-4 border-white shadow-sm;
+  }
+
+  .timeline-line {
+    @apply absolute left-0 top-0 bottom-0 w-[2px] bg-slate-200;
+  }
+}
+
+/* Animations */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

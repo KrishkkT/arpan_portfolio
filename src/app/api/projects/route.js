@@ -1,0 +1,88 @@
+import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
+
+export async function GET() {
+    try {
+        let projects = [];
+        let error = null;
+
+        if (supabase) {
+            const { data, error: queryError } = await supabase
+                .from('projects')
+                .select('*')
+                .order('last_update', { ascending: false });
+
+            projects = data;
+            error = queryError;
+        } else {
+            console.warn("Supabase client not initialized. Check your environment variables.");
+        }
+
+        if (error) {
+            console.error("Supabase Error:", error);
+            // Fall through to demo data on error to keep UI working
+        }
+
+        // If no projects, return some demo data
+        if (!projects || projects.length === 0) {
+            return NextResponse.json([
+                {
+                    id: "demo1",
+                    name: "Smart Agriculture IoT System (Demo)",
+                    description: "An automated irrigation and monitoring system using ESP32, soil sensors, and a mobile dashboard.",
+                    technologies: ["ESP32", "C++", "MQTT", "React"],
+                    githubLink: "https://github.com/Arpanbhuva",
+                    stars: 12,
+                    category: "Hardware",
+                    lastUpdate: new Date(),
+                },
+                {
+                    id: "demo2",
+                    name: "Embedded RTOS Kernel (Demo)",
+                    description: "A lightweight real-time operating system kernel implemented for ARM Cortex-M microcontrollers.",
+                    technologies: ["Embedded C", "ARM Architecture", "RTOS"],
+                    githubLink: "https://github.com/Arpanbhuva",
+                    stars: 25,
+                    category: "Software",
+                    lastUpdate: new Date(),
+                },
+                {
+                    id: "demo3",
+                    name: "Biomedical Signal Analyzer (Demo)",
+                    description: "Processing and analyzing ECG signals to detect arrhythmias using digital signal processing.",
+                    technologies: ["MATLAB", "DSP", "Machine Learning"],
+                    githubLink: "https://github.com/Arpanbhuva",
+                    stars: 8,
+                    category: "Research",
+                    lastUpdate: new Date(),
+                }
+            ]);
+        }
+
+        return NextResponse.json(projects.map(p => ({
+            ...p,
+            githubLink: p.github_link,
+            lastUpdate: p.last_update,
+            imageUrl: p.image_url,
+            isFeatured: p.is_featured,
+            isGitHubSync: p.is_github_sync
+        })));
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function POST(req) {
+    try {
+        const body = await req.json();
+        const { data, error } = await supabase
+            .from('projects')
+            .insert([body])
+            .select();
+
+        if (error) throw error;
+        return NextResponse.json(data[0], { status: 201 });
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+}
