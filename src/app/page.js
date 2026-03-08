@@ -13,6 +13,7 @@ import "aos/dist/aos.css";
 
 export default function Home() {
   const [sectionVisibility, setSectionVisibility] = useState({
+    hero: true,
     about: true,
     skills: true,
     projects: true,
@@ -60,7 +61,7 @@ export default function Home() {
       <Navbar />
 
       <div className="relative">
-        <Hero />
+        {sectionVisibility.hero && <Hero />}
 
         {sectionVisibility.about && (
           <div data-aos="fade-up">

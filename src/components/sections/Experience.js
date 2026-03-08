@@ -36,34 +36,6 @@ const Experience = () => {
         return null;
     }
 
-const experiences_old = [
-    {
-        role: "Embedded Systems Intern",
-        company: "Tech Electronics Solutions",
-        location: "Ahmedabad, India",
-        period: "2024 - Present",
-        description: "Developing firmware for STM32 microcontrollers and designing PCBS for IoT sensing modules.",
-        type: "Internship",
-    },
-    {
-        role: "Junior Research Assistant",
-        company: "University Research Lab",
-        location: "Remote",
-        period: "2023 - 2024",
-        description: "Assisted in research on digital signal processing algorithms for biomedical signal analysis.",
-        type: "Research",
-    },
-    {
-        role: "Hardware Design Lead",
-        company: "Student Project - EcoTrack",
-        location: "College Campus",
-        period: "2022 - 2023",
-        description: "Led a team of 4 to build a solar-powered environmental monitoring station.",
-        type: "Project",
-    },
-];
-
-const Experience = () => {
     return (
         <section id="experience" className="py-16 sm:py-20 md:py-24 bg-background-soft">
             <div className="section-container px-4 sm:px-6">

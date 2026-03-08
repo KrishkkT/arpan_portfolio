@@ -48,27 +48,26 @@ const Skills = () => {
         return null;
     }
 
-const SkillBar = ({ name, level }) => (
-    <div className="mb-3 sm:mb-4">
-        <div className="flex justify-between mb-1.5 sm:mb-2">
-            <span className="text-xs sm:text-sm font-bold text-neutral-text">{name}</span>
-            <span className="text-xs sm:text-sm font-bold text-primary">{level}%</span>
+    const SkillBar = ({ name, level }) => (
+        <div className="mb-3 sm:mb-4">
+            <div className="flex justify-between mb-1.5 sm:mb-2">
+                <span className="text-xs sm:text-sm font-bold text-neutral-text">{name}</span>
+                <span className="text-xs sm:text-sm font-bold text-primary">{level}%</span>
+            </div>
+            <div className="h-1.5 sm:h-2 bg-slate-100 rounded-full overflow-hidden">
+                <motion.div
+                    initial={{ width: 0 }}
+                    whileInView={{ width: `${level}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                    viewport={{ once: true }}
+                    className="h-full bg-primary rounded-full relative"
+                >
+                    <div className="absolute top-0 right-0 h-full w-2 bg-white/30 skew-x-[45deg]" />
+                </motion.div>
+            </div>
         </div>
-        <div className="h-1.5 sm:h-2 bg-slate-100 rounded-full overflow-hidden">
-            <motion.div
-                initial={{ width: 0 }}
-                whileInView={{ width: `${level}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                viewport={{ once: true }}
-                className="h-full bg-primary rounded-full relative"
-            >
-                <div className="absolute top-0 right-0 h-full w-2 bg-white/30 skew-x-[45deg]" />
-            </motion.div>
-        </div>
-    </div>
-);
+    );
 
-const Skills = () => {
     return (
         <section id="skills" className="bg-white py-16 sm:py-20 md:py-24">
             <div className="section-container px-4 sm:px-6">

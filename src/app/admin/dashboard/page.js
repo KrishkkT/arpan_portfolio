@@ -149,16 +149,6 @@ export default function AdminDashboard() {
         }
     };
 
-    const fetchProjects = async () => {
-        try {
-            const response = await fetch("/api/projects");
-            const data = await response.json();
-            setProjects(Array.isArray(data) ? data : []);
-        } catch (error) {
-            console.error("Error fetching projects:", error);
-        }
-    };
-
     const fetchSectionVisibility = async () => {
         try {
             const response = await fetch("/api/section-visibility");
@@ -334,14 +324,12 @@ export default function AdminDashboard() {
                                     <button
                                         onClick={() => toggleSectionVisibility(section.section_name, section.is_visible)}
                                         disabled={loadingVisibility}
-                                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                                            section.is_visible ? "bg-primary" : "bg-slate-200"
-                                        }`}
+                                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${section.is_visible ? "bg-primary" : "bg-slate-200"
+                                            }`}
                                     >
                                         <span
-                                            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                                                section.is_visible ? "translate-x-7" : "translate-x-1"
-                                            }`}
+                                            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${section.is_visible ? "translate-x-7" : "translate-x-1"
+                                                }`}
                                         />
                                     </button>
                                 </div>
