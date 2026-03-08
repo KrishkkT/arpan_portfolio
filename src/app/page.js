@@ -50,7 +50,7 @@ export default function Home() {
           data.forEach((item) => {
             visibilityMap[item.section_name] = item.is_visible;
           });
-          setSectionVisibility(visibilityMap);
+          setSectionVisibility((prev) => ({ ...prev, ...visibilityMap }));
         }
         setLoading(false);
       })

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 
 export async function GET() {
     try {
         let projects = [];
         let error = null;
 
-        if (supabase) {
-            const { data, error: queryError } = await supabase
+        if (supabaseAdmin) {
+            const { data, error: queryError } = await supabaseAdmin
                 .from('projects')
                 .select('*')
                 .order('last_update', { ascending: false });
@@ -75,7 +75,7 @@ export async function GET() {
 export async function POST(req) {
     try {
         const body = await req.json();
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('projects')
             .insert([body])
             .select();
@@ -94,7 +94,7 @@ export async function PUT(req) {
 
         updateData.updated_at = new Date().toISOString();
 
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('projects')
             .update(updateData)
             .eq('id', id)
@@ -116,7 +116,7 @@ export async function DELETE(req) {
             return NextResponse.json({ error: "No ID provided" }, { status: 400 });
         }
 
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
             .from('projects')
             .delete()
             .eq('id', id);
