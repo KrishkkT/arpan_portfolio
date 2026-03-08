@@ -6,6 +6,7 @@ import About from "@/components/sections/About";
 import Skills from "@/components/sections/Skills";
 import Projects from "@/components/sections/Projects";
 import Experience from "@/components/sections/Experience";
+import Certificates from "@/components/sections/Certificates";
 import Contact from "@/components/sections/Contact";
 import Footer from "@/components/layout/Footer";
 import AOS from "aos";
@@ -18,11 +19,22 @@ export default function Home() {
     skills: true,
     projects: true,
     experience: true,
+    certificates: true,
     contact: true,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fire analytics visit once per page load
+    const recordVisit = async () => {
+      try {
+        await fetch("/api/analytics/visit", { method: "POST" });
+      } catch (e) {
+        console.error("Failed to record visit", e);
+      }
+    };
+    recordVisit();
+
     AOS.init({
       duration: 1000,
       once: true,
@@ -87,7 +99,11 @@ export default function Home() {
           </div>
         )}
 
-        {/* Certifications & Achievements could be added here similarly */}
+        {sectionVisibility.certificates && (
+          <div data-aos="fade-up">
+            <Certificates />
+          </div>
+        )}
 
         {sectionVisibility.contact && (
           <div data-aos="fade-up">

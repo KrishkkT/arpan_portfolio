@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req) {
     try {
         const body = await req.json();
 
-        if (!supabase) {
-            return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+        if (!supabaseAdmin) {
+            return NextResponse.json({ error: "Supabase Admin not configured" }, { status: 503 });
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('contacts')
             .insert([body])
             .select();
@@ -42,11 +42,11 @@ export async function POST(req) {
 
 export async function GET() {
     try {
-        if (!supabase) {
+        if (!supabaseAdmin) {
             return NextResponse.json([]);
         }
 
-        const { data: messages, error } = await supabase
+        const { data: messages, error } = await supabaseAdmin
             .from('contacts')
             .select('*')
             .order('created_at', { ascending: false });

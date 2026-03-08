@@ -89,15 +89,40 @@ export async function POST(req) {
 
 export async function PUT(req) {
     try {
-        const { id, is_visible } = await req.json();
+        const body = await req.json();
+        const { id, ...updateData } = body;
+
+        updateData.updated_at = new Date().toISOString();
+
         const { data, error } = await supabase
             .from('projects')
-            .update({ is_visible, updated_at: new Date().toISOString() })
+            .update(updateData)
             .eq('id', id)
             .select();
 
         if (error) throw error;
         return NextResponse.json(data[0]);
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+}
+
+export async function DELETE(req) {
+    try {
+        const url = new URL(req.url);
+        const id = url.searchParams.get("id");
+
+        if (!id) {
+            return NextResponse.json({ error: "No ID provided" }, { status: 400 });
+        }
+
+        const { error } = await supabase
+            .from('projects')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        return NextResponse.json({ message: "Project deleted successfully" });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
