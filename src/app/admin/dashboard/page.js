@@ -658,7 +658,19 @@ function AdminModal({ isOpen, onClose, type, item, onSave }) {
 
     useEffect(() => {
         if (item) {
-            setFormData(item);
+            // Convert camelCase to snake_case for database compatibility
+            const normalized = {};
+            for (const [key, value] of Object.entries(item)) {
+                // Map camelCase API response fields to snake_case database fields
+                if (key === 'githubLink') normalized['github_link'] = value;
+                else if (key === 'lastUpdate') normalized['last_update'] = value;
+                else if (key === 'imageUrl') normalized['image_url'] = value;
+                else if (key === 'isFeatured') normalized['is_featured'] = value;
+                else if (key === 'isGitHubSync') normalized['is_github_sync'] = value;
+                else if (key === 'isVisible') normalized['is_visible'] = value;
+                else normalized[key] = value;
+            }
+            setFormData(normalized);
         } else {
             setFormData({}); // Reset for new items
         }
@@ -672,7 +684,14 @@ function AdminModal({ isOpen, onClose, type, item, onSave }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(formData);
+        // Ensure snake_case field names for database
+        const submittedData = { ...formData };
+        // Map any remaining camelCase to snake_case
+        if (submittedData.githubLink && !submittedData.github_link) {
+            submittedData.github_link = submittedData.githubLink;
+            delete submittedData.githubLink;
+        }
+        onSave(submittedData);
     };
 
     return (
@@ -701,7 +720,11 @@ function AdminModal({ isOpen, onClose, type, item, onSave }) {
                             </div>
                             <div>
                                 <label className="block text-sm font-bold mb-1">GitHub Link</label>
-                                <input type="text" name="github_link" value={formData.github_link || formData.githubLink || ""} onChange={handleChange} className="w-full border rounded-xl px-4 py-2" />
+                                <input type="text" name="github_link" value={formData.github_link || ""} onChange={handleChange} className="w-full border rounded-xl px-4 py-2" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold mb-1">Stars</label>
+                                <input type="number" name="stars" value={formData.stars || "0"} onChange={handleChange} className="w-full border rounded-xl px-4 py-2" />
                             </div>
                         </>
                     )}
