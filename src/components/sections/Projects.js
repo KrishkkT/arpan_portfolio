@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Github, ExternalLink, Star, Code2, Cpu, FlaskConical } from "lucide-react";
 import axios from "axios";
@@ -22,9 +23,11 @@ const ProjectCard = ({ project, index }) => {
         >
             <div className="relative overflow-hidden rounded-lg sm:rounded-xl mb-4 sm:mb-6 bg-slate-50 border border-slate-100 aspect-video flex items-center justify-center">
                 {project.imageUrl ? (
-                    <img
+                    <Image
                         src={project.imageUrl}
                         alt={project.name}
+                        width={800}
+                        height={450}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                 ) : (

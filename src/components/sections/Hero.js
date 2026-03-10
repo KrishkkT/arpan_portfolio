@@ -6,18 +6,36 @@ import Link from "next/link";
 
 const Hero = () => {
     const [resumeUrl, setResumeUrl] = React.useState("/resume.pdf");
+    const [heroData, setHeroData] = React.useState({
+        title: "Arpan Bhuva",
+        subtitle: "Building innovative solutions in electronics, embedded systems, and technology. Passionate about bridging the gap between hardware and software.",
+        image: "/profile-arpan.jpg"
+    });
 
     React.useEffect(() => {
-        const fetchResume = async () => {
+        const fetchData = async () => {
             try {
-                const res = await fetch('/api/resume');
-                const data = await res.json();
-                if (data.url) setResumeUrl(data.url);
+                const [resumeRes, settingsRes] = await Promise.all([
+                    fetch('/api/resume'),
+                    fetch('/api/settings')
+                ]);
+
+                const resumeData = await resumeRes.json();
+                if (resumeData.url) setResumeUrl(resumeData.url);
+
+                const settings = await settingsRes.json();
+                if (settings.hero_title || settings.hero_subtitle || settings.hero_image) {
+                    setHeroData({
+                        title: settings.hero_title || heroData.title,
+                        subtitle: settings.hero_subtitle || heroData.subtitle,
+                        image: settings.hero_image || heroData.image
+                    });
+                }
             } catch (err) {
-                console.error("Resume fetch failed");
+                console.error("Data fetch failed");
             }
         };
-        fetchResume();
+        fetchData();
     }, []);
 
     return (
@@ -56,10 +74,10 @@ const Hero = () => {
                             Electronics & Communication Engineer
                         </span>
                         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold font-heading mb-4 md:mb-6 tracking-tight text-neutral-text leading-tight">
-                            Arpan <span className="text-primary">Bhuva</span>
+                            {heroData.title.split(' ')[0]} <span className="text-primary">{heroData.title.split(' ').slice(1).join(' ')}</span>
                         </h1>
                         <p className="text-base sm:text-lg md:text-xl text-neutral-text/70 mb-6 md:mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                            Building innovative solutions in electronics, embedded systems, and technology. Passionate about bridging the gap between hardware and software.
+                            {heroData.subtitle}
                         </p>
 
                         <div className="flex flex-col sm:flex-row flex-wrap justify-center lg:justify-start gap-3 sm:gap-4">
@@ -98,7 +116,7 @@ const Hero = () => {
                         <div className="relative z-10 p-1.5 sm:p-2 bg-white rounded-[30px] sm:rounded-[35px] shadow-2xl border border-blue-50/50">
                             <div className="w-full aspect-square sm:aspect-[4/5] flex items-center justify-center bg-slate-50 rounded-[26px] sm:rounded-[30px] overflow-hidden">
                                 <motion.img
-                                    src="/profile-arpan.jpg"
+                                    src={heroData.image}
                                     alt="Arpan Bhuva"
                                     className="w-full h-full object-cover object-top"
                                     whileHover={{ scale: 1.05 }}

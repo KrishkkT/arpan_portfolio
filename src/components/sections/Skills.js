@@ -82,9 +82,9 @@ const Skills = () => {
                             <span className="text-primary font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs mb-3 sm:mb-4 block">Skills</span>
                             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-heading text-neutral-text mb-4 sm:mb-6">Expertise & Specialized Knowledge</h2>
                             <p className="text-neutral-text/60 mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base">
-                                As an EC Engineer, I've developed a diverse set of technical skills across hardware architecture, embedded software development, and modern technology frameworks.
+                                As an EC Engineer, I&apos;ve developed a diverse set of technical skills across hardware architecture, embedded software development, and modern technology frameworks.
                             </p>
-                            <div className="grid grid-cols-4 lg:grid-cols-2 gap-3 sm:gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 sm:gap-4">
                                 {[
                                     { label: "Hardware", count: "10+" },
                                     { label: "Software", count: "15+" },

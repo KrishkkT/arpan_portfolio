@@ -13,15 +13,24 @@ import {
     Github,
     Award,
     Eye,
-    FileText
+    FileText,
+    Menu,
+    X,
+    User,
+    Upload,
+    Link as LinkIcon,
+    Trash2
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function AdminDashboard() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState("overview");
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [sectionVisibility, setSectionVisibility] = useState([]);
     const [loadingVisibility, setLoadingVisibility] = useState(false);
+    const [settingsData, setSettingsData] = useState({});
     const [stats, setStats] = useState({
         projects: 0,
         messages: 0,
@@ -43,8 +52,11 @@ export default function AdminDashboard() {
         if (status === "unauthenticated") {
             router.push("/admin/login");
         }
-        if (activeTab === "overview") {
+        if (activeTab === "overview" || activeTab === "analytics") {
             fetchStats();
+        }
+        if (activeTab === "general-settings") {
+            fetchSettings();
         }
         if (activeTab === "projects") {
             fetchProjects();
@@ -62,6 +74,29 @@ export default function AdminDashboard() {
             fetchContentData();
         }
     }, [status, router, activeTab]);
+
+    const fetchSettings = async () => {
+        try {
+            const res = await fetch("/api/settings");
+            const data = await res.json();
+            setSettingsData(data);
+        } catch (error) {
+            console.error("Error fetching settings:", error);
+        }
+    };
+
+    const updateSetting = async (id, value) => {
+        try {
+            await fetch("/api/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, value }),
+            });
+            await fetchSettings();
+        } catch (error) {
+            console.error("Error updating setting:", error);
+        }
+    };
 
     const fetchContentData = async () => {
         try {
@@ -249,6 +284,7 @@ export default function AdminDashboard() {
         else if (type === "skill") { endpoint = "/api/skills"; fetchFn = fetchContentData; }
         else if (type === "experience") { endpoint = "/api/experiences"; fetchFn = fetchContentData; }
         else if (type === "certificate") { endpoint = "/api/certificates"; fetchFn = fetchCertificates; }
+        else if (type === "message") { endpoint = "/api/contact"; fetchFn = fetchMessages; }
 
         if (!endpoint) return;
 
@@ -276,19 +312,45 @@ export default function AdminDashboard() {
 
     const menuItems = [
         { id: "overview", label: "Overview", icon: LayoutDashboard },
+        { id: "analytics", label: "Analytics", icon: BarChart3 },
+        { id: "general-settings", label: "General Settings", icon: User },
         { id: "projects", label: "Manage Projects", icon: Briefcase },
         { id: "messages", label: "Messages", icon: MessageSquare },
         { id: "certifications", label: "Certifications", icon: Award },
         { id: "section-visibility", label: "Section Visibility", icon: Eye },
         { id: "content-management", label: "Content Management", icon: FileText },
-        { id: "analytics", label: "Analytics", icon: BarChart3 },
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50 flex">
+        <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+            {/* Mobile Header */}
+            <div className="md:hidden bg-white border-b border-slate-100 p-4 flex justify-between items-center sticky top-0 z-40">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
+                        <LayoutDashboard className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold text-lg text-neutral-text font-heading">Admin</span>
+                </div>
+                <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="p-2 bg-slate-50 rounded-lg text-neutral-text"
+                >
+                    {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+            </div>
+
             {/* Sidebar */}
-            <div className="w-72 bg-white border-r border-slate-100 flex flex-col p-6">
-                <div className="flex items-center gap-3 mb-10 px-2">
+            <div className={`
+                fixed inset-0 z-30 bg-black/50 transition-opacity md:hidden
+                ${isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
+            `} onClick={() => setIsMobileMenuOpen(false)} />
+
+            <div className={`
+                fixed md:static inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-100 flex flex-col p-6 
+                transform transition-transform duration-300 md:translate-x-0
+                ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+            `}>
+                <div className="hidden md:flex items-center gap-3 mb-10 px-2">
                     <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white">
                         <LayoutDashboard className="w-6 h-6" />
                     </div>
@@ -299,7 +361,10 @@ export default function AdminDashboard() {
                     {menuItems.map((item) => (
                         <button
                             key={item.id}
-                            onClick={() => setActiveTab(item.id)}
+                            onClick={() => {
+                                setActiveTab(item.id);
+                                setIsMobileMenuOpen(false);
+                            }}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === item.id
                                 ? "bg-primary text-white shadow-lg shadow-blue-500/20"
                                 : "text-neutral-text/40 hover:bg-slate-50 hover:text-neutral-text"
@@ -321,25 +386,36 @@ export default function AdminDashboard() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 p-10 overflow-auto">
-                <header className="flex justify-between items-center mb-10">
-                    <div>
-                        <h1 className="text-3xl font-bold text-neutral-text font-heading">
-                            Welcome back, Arpan
-                        </h1>
-                        <p className="text-neutral-text/40 text-sm font-medium mt-1">
-                            Here's what's happening with your portfolio today.
-                        </p>
+            <div className="flex-1 p-4 sm:p-6 md:p-10 overflow-auto">
+                <header className="flex justify-between items-center mb-6 sm:mb-10">
+                    <div className="flex items-center gap-4">
+                        <button
+                            className="p-2 md:hidden hover:bg-slate-50 rounded-lg"
+                            onClick={() => setIsMobileMenuOpen(true)}
+                        >
+                            <Menu className="w-6 h-6 text-neutral-text" />
+                        </button>
+                        <div>
+                            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-neutral-text">
+                                {menuItems.find((item) => item.id === activeTab)?.label}
+                            </h2>
+                            <p className="text-xs sm:text-sm text-neutral-text/40 font-medium">Manage your portfolio details</p>
+                        </div>
                     </div>
-
-                    <button onClick={() => openModal('project')} className="btn-primary flex items-center gap-2">
-                        <Plus className="w-5 h-5" /> Add Project
-                    </button>
+                    <div className="hidden sm:flex items-center gap-5">
+                        <div className="text-right">
+                            <p className="text-sm font-bold text-neutral-text">Arpan Bhuva</p>
+                            <p className="text-[10px] text-primary font-bold uppercase tracking-wider text-right">Administrator</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center font-bold text-primary">
+                            AB
+                        </div>
+                    </div>
                 </header>
 
                 {/* Overview Content */}
                 {activeTab === "overview" && (
-                    <>
+                    <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                             {[
                                 { label: "Site Visits", value: stats.siteVisits.toLocaleString(), change: "+12%" },
@@ -356,38 +432,233 @@ export default function AdminDashboard() {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                )}
 
-                        {/* Quick Settings Card */}
-                        <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 mb-10">
-                            <h3 className="text-xl font-bold text-neutral-text mb-6">Quick Settings</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                <div>
-                                    <label className="block text-sm font-bold text-neutral-text/40 uppercase tracking-widest mb-3">Resume URL</label>
-                                    <div className="flex gap-4">
-                                        <input
-                                            type="text"
-                                            className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium"
-                                            placeholder="https://drive.google.com/..."
-                                            onBlur={async (e) => {
-                                                const url = e.target.value;
-                                                if (!url) return;
-                                                await fetch('/api/resume', {
-                                                    method: 'POST',
-                                                    body: JSON.stringify({ url })
-                                                });
-                                                alert("Resume URL updated!");
-                                            }}
-                                        />
-                                        <button className="btn-outline text-xs">Update</button>
+                {/* Analytics Content */}
+                {activeTab === "analytics" && (
+                    <div className="space-y-6">
+                        <div className="bg-white p-8 sm:p-10 rounded-[40px] shadow-sm border border-slate-100">
+                            <h3 className="text-xl font-bold text-neutral-text mb-8">Performance Overview</h3>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                                <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100">
+                                    <p className="text-xs font-bold text-neutral-text/40 uppercase tracking-widest mb-3">Total Site Engagement</p>
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-4xl font-black text-primary">{stats.siteVisits}</h4>
+                                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                                            <Eye className="w-6 h-6 text-primary" />
+                                        </div>
                                     </div>
-                                    <p className="text-[11px] text-neutral-text/30 mt-3 italic">Link your PDF resume from Google Drive or Cloudinary.</p>
+                                    <p className="text-[10px] text-neutral-text/40 mt-4 italic font-medium">Total views since platform launch</p>
+                                </div>
+
+                                <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100">
+                                    <p className="text-xs font-bold text-neutral-text/40 uppercase tracking-widest mb-3">Community Interaction</p>
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-4xl font-black text-secondary">{stats.messages}</h4>
+                                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                                            <MessageSquare className="w-6 h-6 text-secondary" />
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-neutral-text/40 mt-4 italic font-medium">Total contact submissions received</p>
+                                </div>
+
+                                <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100">
+                                    <p className="text-xs font-bold text-neutral-text/40 uppercase tracking-widest mb-3">Project Showcase Impact</p>
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-4xl font-black text-neutral-text">{stats.projects}</h4>
+                                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                                            <Briefcase className="w-6 h-6 text-neutral-text" />
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-neutral-text/40 mt-4 italic font-medium">Total active projects in portfolio</p>
+                                </div>
+                            </div>
+
+                            <div className="border-t border-slate-100 pt-10">
+                                <h4 className="text-lg font-bold text-neutral-text mb-6">Real-time Traffic Activity</h4>
+                                <div className="h-64 sm:h-80 w-full flex items-end gap-3 sm:gap-6 px-4">
+                                    {/* Simulated dynamic bars for aesthetics */}
+                                    {[65, 45, 75, 55, 90, 40, 60, 85, 50, 70, 45, 80].map((height, i) => (
+                                        <div key={i} className="flex-1 group relative">
+                                            <motion.div
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${height}%` }}
+                                                transition={{ duration: 1, delay: i * 0.05 }}
+                                                className="bg-primary/10 group-hover:bg-primary/30 rounded-t-xl transition-all duration-300 w-full"
+                                            />
+                                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-neutral-text/30 font-bold uppercase">
+                                                {i + 1}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-12 flex justify-between items-center text-xs text-neutral-text/40 font-bold uppercase tracking-widest">
+                                    <span>Past 12 Months activity data</span>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-primary" />
+                                            <span>Traffic Volume</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </>
+                    </div>
                 )}
 
-                {/* Section Visibility Content */}
+                {/* General Settings Content */}
+                {activeTab === "general-settings" && (
+                    <div className="space-y-6 sm:space-y-10">
+                        <div className="bg-white p-6 sm:p-10 rounded-[32px] sm:rounded-[40px] shadow-sm border border-slate-100">
+                            <h3 className="text-xl font-bold text-neutral-text mb-6">Hero Section Content</h3>
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-neutral-text/40 uppercase tracking-widest mb-3">Hero Title</label>
+                                            <input
+                                                type="text"
+                                                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium"
+                                                value={settingsData.hero_title || ""}
+                                                onChange={(e) => setSettingsData({ ...settingsData, hero_title: e.target.value })}
+                                                onBlur={(e) => updateSetting('hero_title', e.target.value)}
+                                                placeholder="Arpan Bhuva"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-neutral-text/40 uppercase tracking-widest mb-3">Hero Subtitle</label>
+                                            <input
+                                                type="text"
+                                                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium"
+                                                value={settingsData.hero_subtitle || ""}
+                                                onChange={(e) => setSettingsData({ ...settingsData, hero_subtitle: e.target.value })}
+                                                onBlur={(e) => updateSetting('hero_subtitle', e.target.value)}
+                                                placeholder="Engineering with Purpose & Innovation"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <label className="block text-sm font-bold text-neutral-text/40 uppercase tracking-widest mb-3 text-center md:text-left">Hero Image (Profile Photo)</label>
+                                        <div className="flex flex-col items-center gap-6">
+                                            <div className="w-40 h-40 rounded-full border-4 border-slate-50 overflow-hidden bg-slate-100 shadow-inner group relative">
+                                                {settingsData.hero_image ? (
+                                                    <img src={settingsData.hero_image} alt="Profile Preview" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center">
+                                                        <User className="w-16 h-16 text-slate-300" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="w-full space-y-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex-1 relative">
+                                                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                                            <LinkIcon className="w-4 h-4 text-neutral-text/30" />
+                                                        </div>
+                                                        <input
+                                                            type="text"
+                                                            className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:border-primary/50 transition-all font-medium"
+                                                            value={settingsData.hero_image || ""}
+                                                            onChange={(e) => setSettingsData({ ...settingsData, hero_image: e.target.value })}
+                                                            onBlur={(e) => updateSetting('hero_image', e.target.value)}
+                                                            placeholder="Paste Image URL here..."
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        onClick={() => document.getElementById('heroImageUpload').click()}
+                                                        className="p-2.5 bg-primary text-white rounded-xl hover:bg-primary-dark transition-all shadow-md active:scale-95"
+                                                        title="Upload from Device"
+                                                    >
+                                                        <Upload className="w-4 h-4" />
+                                                    </button>
+                                                    <input
+                                                        id="heroImageUpload"
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="hidden"
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files[0];
+                                                            if (file) {
+                                                                const reader = new FileReader();
+                                                                reader.onloadend = () => {
+                                                                    const base64String = reader.result;
+                                                                    setSettingsData({ ...settingsData, hero_image: base64String });
+                                                                    updateSetting('hero_image', base64String);
+                                                                };
+                                                                reader.readAsDataURL(file);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <p className="text-[10px] text-center text-neutral-text/30 font-bold uppercase">Supported: JPG, PNG, WEBP or any static Image URL</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 sm:p-10 rounded-[32px] sm:rounded-[40px] shadow-sm border border-slate-100">
+                            <h3 className="text-xl font-bold text-neutral-text mb-6">About Section Content</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-neutral-text/40 uppercase tracking-widest mb-3">About Title</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium"
+                                        value={settingsData.about_title || ""}
+                                        onChange={(e) => setSettingsData({ ...settingsData, about_title: e.target.value })}
+                                        onBlur={(e) => updateSetting('about_title', e.target.value)}
+                                        placeholder="Engineering with Purpose & Innovation"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-neutral-text/40 uppercase tracking-widest mb-3">About Description (Main)</label>
+                                    <textarea
+                                        rows="4"
+                                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium"
+                                        value={settingsData.about_description || ""}
+                                        onChange={(e) => setSettingsData({ ...settingsData, about_description: e.target.value })}
+                                        onBlur={(e) => updateSetting('about_description', e.target.value)}
+                                        placeholder="I am Arpan Bhuva..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-neutral-text/40 uppercase tracking-widest mb-3">About Background (Secondary)</label>
+                                    <textarea
+                                        rows="4"
+                                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium"
+                                        value={settingsData.about_background || ""}
+                                        onChange={(e) => setSettingsData({ ...settingsData, about_background: e.target.value })}
+                                        onBlur={(e) => updateSetting('about_background', e.target.value)}
+                                        placeholder="From firmware to full-stack..."
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 sm:p-10 rounded-[32px] sm:rounded-[40px] shadow-sm border border-slate-100">
+                            <h3 className="text-xl font-bold text-neutral-text mb-6">Resume Settings</h3>
+                            <div>
+                                <label className="block text-sm font-bold text-neutral-text/40 uppercase tracking-widest mb-3">Resume URL</label>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <input
+                                        type="text"
+                                        className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-all font-medium"
+                                        placeholder="https://drive.google.com/..."
+                                        value={settingsData.resume_url || ""}
+                                        onChange={(e) => setSettingsData({ ...settingsData, resume_url: e.target.value })}
+                                        onBlur={(e) => updateSetting('resume_url', e.target.value)}
+                                    />
+                                    <button className="btn-outline text-xs whitespace-nowrap">Update Resume</button>
+                                </div>
+                                <p className="text-[11px] text-neutral-text/30 mt-3 italic">Link your PDF resume from Google Drive or Cloudinary.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {activeTab === "section-visibility" && (
                     <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100">
                         <h3 className="text-xl font-bold text-neutral-text mb-6">Section Visibility Management</h3>
@@ -438,14 +709,16 @@ export default function AdminDashboard() {
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {skills.map((skill) => (
-                                    <div key={skill.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                                    <div key={skill.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 rounded-xl gap-3">
                                         <div>
                                             <h4 className="font-bold text-neutral-text">{skill.name}</h4>
                                             <p className="text-sm text-neutral-text/40">{skill.category}</p>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <button onClick={() => openModal('skill', skill)} className="btn-outline text-[10px] px-2 py-1">Edit</button>
-                                            <button onClick={() => handleDelete('skill', skill.id)} className="btn-outline text-[10px] px-2 py-1 text-red-500 hover:bg-red-50">Delete</button>
+                                        <div className="flex items-center gap-2 justify-between sm:justify-end">
+                                            <div className="flex gap-2">
+                                                <button onClick={() => openModal('skill', skill)} className="btn-outline text-[10px] px-2 py-1">Edit</button>
+                                                <button onClick={() => handleDelete('skill', skill.id)} className="btn-outline text-[10px] px-2 py-1 text-red-500 hover:bg-red-50">Delete</button>
+                                            </div>
                                             <button
                                                 onClick={() => toggleSkillVisibility(skill.id, skill.is_visible)}
                                                 className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none ${skill.is_visible ? "bg-primary" : "bg-slate-200"}`}
@@ -471,14 +744,16 @@ export default function AdminDashboard() {
                             </p>
                             <div className="space-y-4">
                                 {experiences.map((exp) => (
-                                    <div key={exp.id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl">
+                                    <div key={exp.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-slate-50 rounded-2xl gap-4">
                                         <div>
                                             <h4 className="font-bold text-neutral-text">{exp.role}</h4>
                                             <p className="text-sm text-neutral-text/40">{exp.company} • {exp.period}</p>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <button onClick={() => openModal('experience', exp)} className="btn-outline text-[10px] px-2 py-1">Edit</button>
-                                            <button onClick={() => handleDelete('experience', exp.id)} className="btn-outline text-[10px] px-2 py-1 text-red-500 hover:bg-red-50">Delete</button>
+                                        <div className="flex items-center gap-2 justify-between sm:justify-end">
+                                            <div className="flex gap-2">
+                                                <button onClick={() => openModal('experience', exp)} className="btn-outline text-xs px-4 py-2">Edit</button>
+                                                <button onClick={() => handleDelete('experience', exp.id)} className="btn-outline text-xs px-4 py-2 text-red-500 hover:bg-red-50">Delete</button>
+                                            </div>
                                             <button
                                                 onClick={() => toggleExperienceVisibility(exp.id, exp.is_visible)}
                                                 className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none ${exp.is_visible ? "bg-primary" : "bg-slate-200"}`}
@@ -531,22 +806,22 @@ export default function AdminDashboard() {
                         </p>
                         <div className="space-y-4">
                             {projects.map((project) => (
-                                <div key={project.id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl">
-                                    <div className="flex-1">
-                                        <h4 className="font-bold text-neutral-text">{project.name}</h4>
+                                <div key={project.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 bg-slate-50 rounded-2xl gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-bold text-neutral-text truncate">{project.name}</h4>
                                         <p className="text-sm text-neutral-text/40 line-clamp-2">{project.description}</p>
-                                        <div className="flex items-center gap-4 mt-2">
-                                            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
+                                            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                                                 {project.category}
                                             </span>
-                                            <span className="text-xs text-neutral-text/40">
+                                            <span className="text-xs text-neutral-text/40 font-medium">
                                                 ⭐ {project.stars || 0} stars
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => openModal('project', project)} className="btn-outline text-xs">Edit</button>
-                                        <button onClick={() => handleDelete('project', project.id)} className="btn-outline text-xs text-red-500 hover:bg-red-50">Delete</button>
+                                    <div className="flex gap-2 shrink-0">
+                                        <button onClick={() => openModal('project', project)} className="flex-1 sm:flex-none btn-outline text-xs py-2 px-4 font-bold">Edit</button>
+                                        <button onClick={() => handleDelete('project', project.id)} className="flex-1 sm:flex-none btn-outline text-xs py-2 px-4 text-red-500 hover:bg-red-50 font-bold">Delete</button>
                                     </div>
                                 </div>
                             ))}
@@ -604,18 +879,32 @@ export default function AdminDashboard() {
                         </p>
                         <div className="space-y-4">
                             {messagesList.map((msg) => (
-                                <div key={msg.id} className="p-6 bg-slate-50 rounded-2xl">
+                                <div key={msg.id} className="p-6 bg-slate-50 rounded-2xl group relative hover:bg-slate-100/50 transition-colors duration-300">
                                     <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <h4 className="font-bold text-neutral-text">{msg.name}</h4>
-                                            <p className="text-sm text-neutral-text/40">{msg.email}</p>
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                                {msg.name?.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-neutral-text">{msg.name}</h4>
+                                                <p className="text-sm text-neutral-text/40">{msg.email}</p>
+                                            </div>
                                         </div>
-                                        <span className="text-xs text-neutral-text/40">
-                                            {new Date(msg.created_at).toLocaleDateString()}
-                                        </span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs text-neutral-text/40 font-medium">
+                                                {new Date(msg.created_at).toLocaleDateString()}
+                                            </span>
+                                            <button
+                                                onClick={() => handleDelete('message', msg.id)}
+                                                className="p-2 text-red-500/30 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                                title="Delete Message"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
-                                    <p className="text-sm font-semibold mt-2">{msg.subject}</p>
-                                    <p className="text-sm text-neutral-text/70 mt-1 whitespace-pre-wrap">{msg.message}</p>
+                                    <p className="text-sm font-semibold mt-4 text-neutral-text pl-14">{msg.subject}</p>
+                                    <p className="text-sm text-neutral-text/70 mt-1 whitespace-pre-wrap pl-14">{msg.message}</p>
                                 </div>
                             ))}
                             {messagesList.length === 0 && (
@@ -628,7 +917,7 @@ export default function AdminDashboard() {
                 )}
 
                 {/* Placeholder for remaining tabs */}
-                {!["overview", "projects", "certifications", "messages", "section-visibility", "content-management"].includes(activeTab) && (
+                {!["overview", "analytics", "general-settings", "projects", "certifications", "messages", "section-visibility", "content-management"].includes(activeTab) && (
                     <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 min-h-[400px] flex flex-col items-center justify-center text-center">
                         <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-6">
                             <Settings className="w-10 h-10 text-neutral-text/10" />
@@ -649,7 +938,7 @@ export default function AdminDashboard() {
                     onSave={handleSave}
                 />
             </div>
-        </div>
+        </div >
     );
 }
 

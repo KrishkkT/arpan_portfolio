@@ -25,16 +25,43 @@ export async function POST(req) {
         // If the user provides a GOOGLE_SHEET_HOOK_URL, we can post to it
         if (process.env.GOOGLE_SHEET_HOOK_URL) {
             try {
-                await fetch(process.env.GOOGLE_SHEET_HOOK_URL, {
+                const sheetRes = await fetch(process.env.GOOGLE_SHEET_HOOK_URL, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify(body)
                 });
+                const sheetData = await sheetRes.json();
+                console.log("Google Sheet Sync Result:", sheetData);
             } catch (err) {
                 console.error("Google Sheet Sync Failed:", err);
             }
         }
 
-        return NextResponse.json({ success: true, data: data[0] }, { status: 201 });
+        return NextResponse.json({ success: true, id: data[0].id });
+    } catch (error) {
+        console.error("Contact Form Error:", error);
+        return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+}
+
+export async function DELETE(req) {
+    try {
+        const url = new URL(req.url);
+        const id = url.searchParams.get("id");
+
+        if (!id) {
+            return NextResponse.json({ error: "No ID provided" }, { status: 400 });
+        }
+
+        const { error } = await supabaseAdmin
+            .from('contacts')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        return NextResponse.json({ message: "Message deleted successfully" });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }

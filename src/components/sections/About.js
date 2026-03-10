@@ -16,6 +16,30 @@ const focusAreas = [
 ];
 
 const About = () => {
+    const [aboutData, setAboutData] = React.useState({
+        title: "Purpose",
+        description: "I am Arpan Bhuva, an Electronics & Communication Engineering student passionate about building systems that solve real-world problems. My interest lies in the intersection of hardware and software, specifically in embedded systems and IoT.",
+        background: "From firmware to full-stack, I enjoy taking a project from concept to completion. I'm constantly exploring new technologies and applying them to create impactful solutions in the real world."
+    });
+
+    React.useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch('/api/settings');
+                const settings = await res.json();
+                if (settings.about_title || settings.about_description || settings.about_background) {
+                    setAboutData({
+                        title: settings.about_title || aboutData.title,
+                        description: settings.about_description || aboutData.description,
+                        background: settings.about_background || aboutData.background
+                    });
+                }
+            } catch (err) {
+                console.error("Settings fetch failed");
+            }
+        };
+        fetchSettings();
+    }, []);
     return (
         <section id="about" className="py-16 sm:py-20 md:py-24 bg-white">
             <div className="section-container px-4 sm:px-6">
@@ -80,14 +104,14 @@ const About = () => {
                             viewport={{ once: true }}
                         >
                             <span className="text-primary font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs mb-3 sm:mb-4 block underline underline-offset-8 decoration-primary/30">Background</span>
-                            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-heading text-neutral-text mb-6 sm:mb-8">Engineering with <span className="text-primary">Purpose</span> & Innovation</h2>
+                            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-heading text-neutral-text mb-6 sm:mb-8">Engineering with <span className="text-primary">{aboutData.title}</span> & Innovation</h2>
 
                             <p className="text-neutral-text/70 text-sm sm:text-base md:text-lg leading-relaxed mb-6 sm:mb-8">
-                                I am Arpan Bhuva, an Electronics & Communication Engineering student passionate about building systems that solve real-world problems. My interest lies in the intersection of hardware and software, specifically in embedded systems and IoT.
+                                {aboutData.description}
                             </p>
 
                             <p className="text-neutral-text/60 text-sm sm:text-base leading-relaxed mb-8 sm:mb-10">
-                                From firmware to full-stack, I enjoy taking a project from concept to completion. I'm constantly exploring new technologies and applying them to create impactful solutions in the real world.
+                                {aboutData.background}
                             </p>
 
                             <div className="space-y-8 sm:space-y-10">

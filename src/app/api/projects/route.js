@@ -75,14 +75,28 @@ export async function GET() {
 export async function POST(req) {
     try {
         const body = await req.json();
+
+        const insertData = {
+            name: body.name,
+            description: body.description,
+            category: body.category || 'Software',
+            github_link: body.github_link || body.githubLink,
+            stars: parseInt(body.stars) || 0,
+            image_url: body.image_url || body.imageUrl,
+            is_featured: body.is_featured ?? body.isFeatured ?? false,
+            is_github_sync: body.is_github_sync ?? body.isGitHubSync ?? false,
+            is_visible: body.is_visible ?? body.isVisible ?? true
+        };
+
         const { data, error } = await supabaseAdmin
             .from('projects')
-            .insert([body])
+            .insert([insertData])
             .select();
 
         if (error) throw error;
         return NextResponse.json(data[0], { status: 201 });
     } catch (error) {
+        console.error("POST Project Error:", error);
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
 }
@@ -90,9 +104,40 @@ export async function POST(req) {
 export async function PUT(req) {
     try {
         const body = await req.json();
-        const { id, ...updateData } = body;
+        const { id } = body;
 
-        updateData.updated_at = new Date().toISOString();
+        if (!id) {
+            return NextResponse.json({ error: "No ID provided" }, { status: 400 });
+        }
+
+        // Handle demo data
+        if (id.toString().startsWith("demo")) {
+            return NextResponse.json({ message: "Demo project updated (simulated)" });
+        }
+
+        const updateData = {};
+        if (body.name !== undefined) updateData.name = body.name;
+        if (body.description !== undefined) updateData.description = body.description;
+        if (body.category !== undefined) updateData.category = body.category;
+
+        const github_link = body.github_link !== undefined ? body.github_link : body.githubLink;
+        if (github_link !== undefined) updateData.github_link = github_link;
+
+        if (body.stars !== undefined) updateData.stars = parseInt(body.stars) || 0;
+
+        const image_url = body.image_url !== undefined ? body.image_url : body.imageUrl;
+        if (image_url !== undefined) updateData.image_url = image_url;
+
+        const is_featured = body.is_featured !== undefined ? body.is_featured : body.isFeatured;
+        if (is_featured !== undefined) updateData.is_featured = is_featured;
+
+        const is_github_sync = body.is_github_sync !== undefined ? body.is_github_sync : body.isGitHubSync;
+        if (is_github_sync !== undefined) updateData.is_github_sync = is_github_sync;
+
+        const is_visible = body.is_visible !== undefined ? body.is_visible : body.isVisible;
+        if (is_visible !== undefined) updateData.is_visible = is_visible;
+
+        updateData.last_update = new Date().toISOString();
 
         const { data, error } = await supabaseAdmin
             .from('projects')
@@ -103,6 +148,7 @@ export async function PUT(req) {
         if (error) throw error;
         return NextResponse.json(data[0]);
     } catch (error) {
+        console.error("PUT Project Error:", error);
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
 }
@@ -114,6 +160,11 @@ export async function DELETE(req) {
 
         if (!id) {
             return NextResponse.json({ error: "No ID provided" }, { status: 400 });
+        }
+
+        // Handle demo data
+        if (id.toString().startsWith("demo")) {
+            return NextResponse.json({ message: "Demo project deleted (simulated)" });
         }
 
         const { error } = await supabaseAdmin
